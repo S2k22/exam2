@@ -1,26 +1,33 @@
 using System;
+using System.Threading.Tasks;
 using Domain.Services;
+using Domain.Models;
 
 namespace Presentation
 {
-    public static class CourseMenu
+    public class CourseMenu
     {
-        private static readonly CourseService CourseService = new();
+        private readonly CourseService _courseService;
 
-        public static void Show()
+        // Constructor for dependency injection
+        public CourseMenu(CourseService courseService)
+        {
+            _courseService = courseService ?? throw new ArgumentNullException(nameof(courseService));
+        }
+
+        public async Task ShowMenuAsync()
         {
             while (true)
             {
-                ShowHeader("Manage Courses");
-
+                Console.Clear();
+                Console.WriteLine("--- Course Management ---");
                 Console.WriteLine("1. Add Course");
-                Console.WriteLine("2. List Courses");
+                Console.WriteLine("2. List All Courses");
                 Console.WriteLine("3. Edit Course");
                 Console.WriteLine("4. Delete Course");
                 Console.WriteLine("5. Search Courses");
                 Console.WriteLine("6. Show Popular Courses");
-                Console.WriteLine("7. Back to Main Menu");
-                Console.WriteLine("========================================");
+                Console.WriteLine("7. Exit");
                 Console.Write("Enter your choice: ");
 
                 var choice = Console.ReadLine();
@@ -28,151 +35,209 @@ namespace Presentation
                 switch (choice)
                 {
                     case "1":
-                        AddCourse();
+                        await AddCourseAsync();
                         break;
                     case "2":
-                        ListCourses();
+                        await ListCoursesAsync();
                         break;
                     case "3":
-                        EditCourse();
+                        await EditCourseAsync();
                         break;
                     case "4":
-                        DeleteCourse();
+                        await DeleteCourseAsync();
                         break;
                     case "5":
-                        SearchCourses();
+                        await SearchCoursesAsync();
                         break;
                     case "6":
-                        ShowPopularCoursesReport();
+                        await ShowPopularCoursesAsync();
                         break;
                     case "7":
                         return;
                     default:
-                        ShowMessage("Invalid choice. Press any key to try again...", ConsoleColor.Red);
+                        Console.WriteLine("Invalid choice. Press any key to try again...");
                         Console.ReadKey();
                         break;
                 }
             }
         }
 
-        private static void AddCourse()
+        private async Task AddCourseAsync()
         {
+            Console.Clear();
             Console.Write("Enter Course Title: ");
             var title = Console.ReadLine();
-            Console.Write("Enter Course Credits: ");
-            if (!int.TryParse(Console.ReadLine(), out int credits))
+
+            Console.Write("Enter Number of Credits: ");
+            if (!int.TryParse(Console.ReadLine(), out var credits))
             {
-                ShowMessage("Invalid number of credits. Press any key to try again...", ConsoleColor.Red);
+                Console.WriteLine("Invalid number of credits. Press any key to try again...");
                 Console.ReadKey();
                 return;
             }
 
             try
             {
-                CourseService.AddCourse(title, credits);
-                ShowMessage("Course added successfully!", ConsoleColor.Green);
+                await _courseService.AddCourseAsync(title, credits);
+                Console.WriteLine("Course added successfully!");
             }
             catch (Exception ex)
             {
-                ShowMessage($"Error: {ex.Message}", ConsoleColor.Red);
+                Console.WriteLine($"Error: {ex.Message}");
             }
+            Console.WriteLine("Press any key to continue...");
             Console.ReadKey();
         }
 
-        private static void ListCourses()
+        private async Task ListCoursesAsync()
         {
             Console.Clear();
-            CourseService.ListCourses();
-            Console.WriteLine("Press any key to go back...");
+            try
+            {
+                var courses = await _courseService.GetAllCoursesAsync();
+                if (courses.Count == 0)
+                {
+                    Console.WriteLine("No courses found.");
+                }
+                else
+                {
+                    Console.WriteLine("--- List of Courses ---");
+                    foreach (var course in courses)
+                    {
+                        Console.WriteLine($"{course.Id}: {course.Title} ({course.Credits} credits)");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error: {ex.Message}");
+            }
+            Console.WriteLine("Press any key to continue...");
             Console.ReadKey();
         }
 
-        private static void EditCourse()
+        private async Task EditCourseAsync()
         {
+            Console.Clear();
             Console.Write("Enter Course ID to edit: ");
-            if (!int.TryParse(Console.ReadLine(), out int courseId))
+            if (!int.TryParse(Console.ReadLine(), out var id))
             {
-                ShowMessage("Invalid Course ID. Press any key to try again...", ConsoleColor.Red);
+                Console.WriteLine("Invalid ID. Press any key to try again...");
                 Console.ReadKey();
                 return;
             }
 
-            Console.Write("Enter New Title: ");
-            var newTitle = Console.ReadLine();
-            Console.Write("Enter New Credits: ");
-            if (!int.TryParse(Console.ReadLine(), out int newCredits))
+            Console.Write("Enter New Course Title: ");
+            var title = Console.ReadLine();
+
+            Console.Write("Enter New Number of Credits: ");
+            if (!int.TryParse(Console.ReadLine(), out var credits))
             {
-                ShowMessage("Invalid number of credits. Press any key to try again...", ConsoleColor.Red);
+                Console.WriteLine("Invalid number of credits. Press any key to try again...");
                 Console.ReadKey();
                 return;
             }
 
             try
             {
-                CourseService.EditCourse(courseId, newTitle, newCredits);
-                ShowMessage("Course details updated successfully!", ConsoleColor.Green);
+                await _courseService.UpdateCourseAsync(id, title, credits);
+                Console.WriteLine("Course updated successfully!");
             }
             catch (Exception ex)
             {
-                ShowMessage($"Error: {ex.Message}", ConsoleColor.Red);
+                Console.WriteLine($"Error: {ex.Message}");
             }
-            Console.ReadKey();
-        }
-
-        private static void DeleteCourse()
-        {
-            Console.Write("Enter Course ID to delete: ");
-            if (int.TryParse(Console.ReadLine(), out int courseId))
-            {
-                try
-                {
-                    CourseService.DeleteCourse(courseId);
-                    ShowMessage("Course deleted successfully!", ConsoleColor.Green);
-                }
-                catch (Exception ex)
-                {
-                    ShowMessage($"Error: {ex.Message}", ConsoleColor.Red);
-                }
-            }
-            else
-            {
-                ShowMessage("Invalid ID. Press any key to try again...", ConsoleColor.Red);
-            }
-            Console.ReadKey();
-        }
-
-        private static void SearchCourses()
-        {
-            Console.Write("Enter course title to search: ");
-            var query = Console.ReadLine();
-            CourseService.SearchCourses(query);
             Console.WriteLine("Press any key to continue...");
             Console.ReadKey();
         }
 
-        private static void ShowHeader(string title)
+        private async Task DeleteCourseAsync()
         {
             Console.Clear();
-            Console.ForegroundColor = ConsoleColor.Cyan;
-            Console.WriteLine(new string('=', 40));
-            Console.WriteLine($"         {title.ToUpper()}         ");
-            Console.WriteLine(new string('=', 40));
-            Console.ResetColor();
-        }
+            Console.Write("Enter Course ID to delete: ");
+            if (!int.TryParse(Console.ReadLine(), out var id))
+            {
+                Console.WriteLine("Invalid ID. Press any key to try again...");
+                Console.ReadKey();
+                return;
+            }
 
-        private static void ShowMessage(string message, ConsoleColor color)
-        {
-            Console.ForegroundColor = color;
-            Console.WriteLine(message);
-            Console.ResetColor();
-        }
-        
-        private static void ShowPopularCoursesReport()
-        {
-            CourseService.ShowPopularCourses();
+            try
+            {
+                await _courseService.DeleteCourseAsync(id);
+                Console.WriteLine("Course deleted successfully!");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error: {ex.Message}");
+            }
             Console.WriteLine("Press any key to continue...");
             Console.ReadKey();
         }
 
+        private async Task SearchCoursesAsync()
+        {
+            Console.Clear();
+            Console.Write("Enter search term: ");
+            var query = Console.ReadLine();
+
+            try
+            {
+                var courses = await _courseService.SearchCoursesAsync(query);
+                if (courses.Count == 0)
+                {
+                    Console.WriteLine("No courses found.");
+                }
+                else
+                {
+                    Console.WriteLine("--- Search Results ---");
+                    foreach (var course in courses)
+                    {
+                        Console.WriteLine($"{course.Id}: {course.Title} ({course.Credits} credits)");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error: {ex.Message}");
+            }
+            Console.WriteLine("Press any key to continue...");
+            Console.ReadKey();
+        }
+
+        private async Task ShowPopularCoursesAsync()
+        {
+            Console.Clear();
+            Console.Write("Enter minimum enrollment: ");
+            if (!int.TryParse(Console.ReadLine(), out var minEnrollment))
+            {
+                Console.WriteLine("Invalid number. Press any key to try again...");
+                Console.ReadKey();
+                return;
+            }
+
+            try
+            {
+                var popularCourses = await _courseService.GetPopularCoursesAsync(minEnrollment);
+                if (popularCourses.Count == 0)
+                {
+                    Console.WriteLine("No popular courses found.");
+                }
+                else
+                {
+                    Console.WriteLine("--- Popular Courses ---");
+                    foreach (var (title, enrollmentCount) in popularCourses)
+                    {
+                        Console.WriteLine($"{title}: {enrollmentCount} enrollments");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error: {ex.Message}");
+            }
+            Console.WriteLine("Press any key to continue...");
+            Console.ReadKey();
+        }
     }
 }
