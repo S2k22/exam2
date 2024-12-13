@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using Domain.Services;
 using Data;
 using Presentation;
+using StudentEnrollmentSystem.Domain.Services;
 
 namespace StudentEnrollmentSystem
 {
@@ -14,6 +15,9 @@ namespace StudentEnrollmentSystem
             var courseRepository = new CourseRepository();
             var courseService = new CourseService(courseRepository);
             var courseMenu = new CourseMenu(courseService);
+            var studentService = new StudentService();
+            var enrollmentService = new EnrollmentService();
+            var dashboardService = new DashboardService(studentService, enrollmentService);
 
             while (true)
             {
@@ -47,7 +51,9 @@ namespace StudentEnrollmentSystem
                         EnrollmentMenu.Show();
                         break;
                     case "4":
-                        ShowDashboard();
+
+                        dashboardService.ShowDashboard();
+
                         break;
                     case "5":
                         ShowHelp();
@@ -82,23 +88,6 @@ namespace StudentEnrollmentSystem
             Console.ResetColor();
         }
 
-        private static void ShowDashboard()
-        {
-            Console.Clear();
-            ShowHeader("Dashboard");
-
-            // Fetching actual data from services
-            int totalStudents = new StudentService().GetAllStudents().Count;
-            int totalEnrollments = new EnrollmentService().GetAllEnrollments().Count;
-
-            // Displaying the counts
-            Console.WriteLine($"Total Students Registered: {totalStudents}");
-            Console.WriteLine($"Total Enrollments: {totalEnrollments}");
-            Console.WriteLine("========================================");
-            Console.WriteLine("Press any key to go back to the main menu...");
-            Console.ReadKey();
-        }
-
 
         private static void ShowHelp()
         {
@@ -117,4 +106,3 @@ namespace StudentEnrollmentSystem
         }
     }
 }
-
