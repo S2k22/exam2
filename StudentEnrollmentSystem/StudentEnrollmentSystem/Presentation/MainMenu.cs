@@ -18,8 +18,8 @@ namespace StudentEnrollmentSystem
             while (true)
             {
                 ShowHeader("Student Enrollment System");
-                Console.WriteLine("1. Manage Students");
-                Console.WriteLine("2. Manage Courses");
+                Console.WriteLine("1. Manage Courses");
+                Console.WriteLine("2. Manage Students");
                 Console.WriteLine("3. Manage Enrollments");
                 Console.WriteLine("4. View Dashboard");
                 Console.WriteLine("5. Help");
@@ -35,8 +35,9 @@ namespace StudentEnrollmentSystem
                         await courseMenu.ShowMenuAsync();
                         break;
                     case "2":
-                        Console.WriteLine("Exiting the system...");
-                        return;
+                        NavigateTo("Manage Students");
+                        StudentMenu.Show();
+                        break;
                     default:
                         Console.WriteLine("Invalid choice. Press any key to try again...");
                         Console.ReadKey();
